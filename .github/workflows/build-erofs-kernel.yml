@@ -1,0 +1,41 @@
+name: Build EROFS Kernel
+
+on:
+  push:
+    branches: [erofs-kernel]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  USERNAME: sylphxai
+
+jobs:
+  build:
+    name: Build Kernel with EROFS
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/local/lib/android /opt/ghc /usr/share/dotnet
+          df -h
+
+      - name: Build kernel package
+        run: |
+          make kernel \
+            PLATFORM=linux/amd64 \
+            REGISTRY=${{ env.REGISTRY }} \
+            USERNAME=${{ env.USERNAME }} \
+            PUSH=true \
+            TAG=v1.12.6-erofs
+        timeout-minutes: 180

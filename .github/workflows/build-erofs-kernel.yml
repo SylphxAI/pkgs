@@ -30,6 +30,22 @@ jobs:
           sudo rm -rf /usr/local/lib/android /opt/ghc /usr/share/dotnet
           df -h
 
+      # bldr/Pkgfile uses mergeop which requires containerd image store
+      - name: Setup Docker with containerd snapshotter
+        run: |
+          sudo mkdir -p /etc/docker
+          echo '{"features":{"containerd-snapshotter":true}}' | sudo tee /etc/docker/daemon.json
+          sudo systemctl restart docker
+          docker info | grep -i "storage\|snapshotter"
+
+      - name: Setup buildx with containerd backend
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+          driver-opts: |
+            image=moby/buildkit:latest
+            network=host
+
       - name: Build kernel package
         run: |
           make kernel \
